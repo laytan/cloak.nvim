@@ -1,0 +1,15 @@
+indent_width: 2
+continuation_indent_width: 2
+keep_simple_control_block_one_line: false
+keep_simple_function_one_line: false
+break_after_functioncall_lp: true
+break_before_functioncall_rp: true
+chop_down_parameter: true
+chop_down_table: true
+break_after_functiondef_lp: true
+align_parameter: false
+break_before_functiondef_rp: true
+extra_sep_at_table_end: true
+double_quote_to_single_quote: true
+spaces_inside_table_braces: true
+
