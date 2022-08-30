@@ -31,7 +31,7 @@ require('cloak').setup({
 
 ## Usage
 
-The plugin automatically activates when a file mathed by the patterns is opened.
+The plugin automatically activates when a file matched by the patterns is opened.
 
 You do have to call the 'setup()' function.
 
