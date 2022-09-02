@@ -29,6 +29,7 @@ M.setup = function(opts)
 
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
+  vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
 end
 
 M.uncloak = function()
@@ -65,6 +66,14 @@ end
 M.enable = function()
   M.opts.enabled = true
   vim.cmd('doautocmd TextChanged')
+end
+
+M.toggle = function()
+  if M.opts.enabled then
+    M.disable()
+  else
+    M.enable()
+  end
 end
 
 return M
