@@ -7,7 +7,10 @@ local M = {}
 
 M.opts = {
   enabled = true,
-  patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
+  cloak_character = '*',
+  patterns = {
+      { file_pattern = '.env*', cloak_pattern = '=.+' }
+  },
 }
 
 M.setup = function(opts)
@@ -29,6 +32,7 @@ M.setup = function(opts)
 
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
+  vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
 end
 
 M.uncloak = function()
@@ -49,7 +53,7 @@ M.cloak = function(cloak_pattern)
     if first ~= nil then
       vim.api.nvim_buf_set_extmark(
         0, namespace, i - 1, first, {
-          virt_text = { { string.rep('*', last - first), 'Comment' } },
+          virt_text = { { string.rep(M.opts.cloak_character, last - first), 'Comment' } },
           virt_text_pos = 'overlay',
         }
       )
@@ -65,6 +69,14 @@ end
 M.enable = function()
   M.opts.enabled = true
   vim.cmd('doautocmd TextChanged')
+end
+
+M.toggle = function()
+  if M.opts.enabled then
+    M.disable()
+  else
+    M.enable()
+  end
 end
 
 return M

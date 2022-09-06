@@ -1,6 +1,6 @@
 # Cloak.nvim
 
-Cloak allows you to overlay *'s over defined patterns in defined files.
+Cloak allows you to overlay *'s (or any other character) over defined patterns in defined files.
 
 It also disabled 'cmp' for the buffer(if it is installed).
 
@@ -13,11 +13,12 @@ It also disabled 'cmp' for the buffer(if it is installed).
 Here is the default configuration.
 
 'file_pattern' can be a string or table of strings, they should be valid autocommand patterns.
-'cloak_pattern' is a lua pattern ran over every line in the buffer, overlaying a * over the match, excluding the first character.
+'cloak_pattern' is a lua pattern ran over every line in the buffer, overlaying 'cloak_character' over the match, excluding the first character.
 
 ```lua
 require('cloak').setup({
   enabled = true,
+  cloak_character = '*',
   patterns = {
     {
       -- Match any file starting with '.env'.
@@ -35,4 +36,4 @@ The plugin automatically activates when a file matched by the patterns is opened
 
 You do have to call the 'setup()' function.
 
-':CloakDisable' and ':CloakEnable' are also available to toggle cloaking.
+':CloakDisable', ':CloakEnable' and ':CloakToggle' are also available to toggle cloaking.
