@@ -7,7 +7,10 @@ local M = {}
 
 M.opts = {
   enabled = true,
-  patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
+  cloak_character = '*',
+  patterns = {
+      { file_pattern = '.env*', cloak_pattern = '=.+' }
+  },
 }
 
 M.setup = function(opts)
@@ -50,7 +53,7 @@ M.cloak = function(cloak_pattern)
     if first ~= nil then
       vim.api.nvim_buf_set_extmark(
         0, namespace, i - 1, first, {
-          virt_text = { { string.rep('*', last - first), 'Comment' } },
+          virt_text = { { string.rep(M.opts.cloak_character, last - first), 'Comment' } },
           virt_text_pos = 'overlay',
         }
       )
