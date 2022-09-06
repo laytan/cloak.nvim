@@ -35,4 +35,4 @@ The plugin automatically activates when a file matched by the patterns is opened
 
 You do have to call the 'setup()' function.
 
-':CloakDisable' and ':CloakEnable' are also available to toggle cloaking.
+':CloakDisable', ':CloakEnable' and ':CloakToggle' are also available to toggle cloaking.
