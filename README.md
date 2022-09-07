@@ -2,7 +2,7 @@
 
 Cloak allows you to overlay *'s (or any other character) over defined patterns in defined files.
 
-It also disabled 'cmp' for the buffer(if it is installed).
+It also disables 'cmp' for the buffer(if it is installed).
 
 ## Demo
 
@@ -13,7 +13,8 @@ It also disabled 'cmp' for the buffer(if it is installed).
 Here is the default configuration.
 
 'file_pattern' can be a string or table of strings, they should be valid autocommand patterns.
-'cloak_pattern' is a lua pattern ran over every line in the buffer, overlaying 'cloak_character' over the match, excluding the first character.
+'cloak_pattern' is a lua pattern ran over every line in the buffer,
+overlaying 'cloak_character' over the match, excluding the first character.
 
 ```lua
 require('cloak').setup({
