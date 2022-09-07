@@ -20,6 +20,8 @@ overlaying 'cloak_character' over the match, excluding the first character.
 require('cloak').setup({
   enabled = true,
   cloak_character = '*',
+  -- The applied highlight group (colors) on the cloaking, see `:h highlight`.
+  highlight_group = 'Comment',
   patterns = {
     {
       -- Match any file starting with '.env'.
