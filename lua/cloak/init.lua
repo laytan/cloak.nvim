@@ -40,23 +40,29 @@ end
 M.cloak = function(cloak_pattern)
   M.uncloak()
 
+  if type(cloak_pattern) == 'string' then
+    cloak_pattern = { cloak_pattern }
+  end
+
   if has_cmp then
     cmp.setup.buffer({ enabled = false })
   end
 
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   for i, line in ipairs(lines) do
-    local first, last = line:find(cloak_pattern)
+    for _, pattern in ipairs(cloak_pattern) do
+      local first, last = line:find(pattern)
 
-    if first ~= nil then
-      vim.api.nvim_buf_set_extmark(
-        0, namespace, i - 1, first, {
-          virt_text = {
-            { string.rep(M.opts.cloak_character, last - first), 'Comment' },
-          },
-          virt_text_pos = 'overlay',
-        }
-      )
+      if first ~= nil then
+        vim.api.nvim_buf_set_extmark(
+          0, namespace, i - 1, first, {
+            virt_text = {
+              { string.rep(M.opts.cloak_character, last - first), 'Comment' },
+            },
+            virt_text_pos = 'overlay',
+          }
+        )
+      end
     end
   end
 end
