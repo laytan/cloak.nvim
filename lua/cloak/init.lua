@@ -4,7 +4,6 @@ local namespace = vim.api.nvim_create_namespace('cloak')
 -- In case cmp is lazy loaded, we check :CmpStatus instead of a pcall to require
 -- so we maintain the lazy load.
 local has_cmp = function()
-  print((vim.fn.exists(':CmpStatus') > 0))
   return vim.fn.exists(':CmpStatus') > 0
 end
 
