@@ -76,7 +76,7 @@ M.cloak = function(cloak_pattern)
     end
   end
   if found_pattern then
-    vim.opt.wrap = false
+    vim.opt_local.wrap = false
   end
 end
 
