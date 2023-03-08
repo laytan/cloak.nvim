@@ -53,12 +53,14 @@ M.cloak = function(cloak_pattern)
     require('cmp').setup.buffer({ enabled = false })
   end
 
+  local found_pattern = false
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   for i, line in ipairs(lines) do
     for _, pattern in ipairs(cloak_pattern) do
       local first, last = line:find(pattern)
 
       if first ~= nil then
+        found_pattern = true
         vim.api.nvim_buf_set_extmark(
           0, namespace, i - 1, first, {
             virt_text = {
@@ -72,6 +74,9 @@ M.cloak = function(cloak_pattern)
         )
       end
     end
+  end
+  if found_pattern then
+    vim.opt_local.wrap = false
   end
 end
 
