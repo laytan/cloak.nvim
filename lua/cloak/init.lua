@@ -12,6 +12,7 @@ local M = {}
 M.opts = {
   enabled = true,
   cloak_character = '*',
+  cloak_length = nil,
   highlight_group = 'Comment',
   patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
 }
@@ -53,6 +54,14 @@ M.cloak = function(cloak_pattern)
     require('cmp').setup.buffer({ enabled = false })
   end
 
+  local function determine_pattern(first_line, last_line)
+    if tonumber(M.opts.cloak_length) ~= nil then
+      return string.rep(M.opts.cloak_character, M.opts.cloak_length)..string.rep(' ', last_line - first_line)
+    else
+      return string.rep(M.opts.cloak_character, last_line - first_line)
+    end
+  end
+
   local found_pattern = false
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   for i, line in ipairs(lines) do
@@ -63,9 +72,10 @@ M.cloak = function(cloak_pattern)
         found_pattern = true
         vim.api.nvim_buf_set_extmark(
           0, namespace, i - 1, first, {
+            hl_mode = 'combine',
             virt_text = {
               {
-                string.rep(M.opts.cloak_character, last - first),
+                determine_pattern(first, last),
                 M.opts.highlight_group,
               },
             },
