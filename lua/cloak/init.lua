@@ -54,11 +54,11 @@ M.cloak = function(cloak_pattern)
     require('cmp').setup.buffer({ enabled = false })
   end
 
-  local function determine_pattern(first_line, last_line)
+  local function determine_replacement(first_col, last_col)
     if tonumber(M.opts.cloak_length) ~= nil then
-      return string.rep(M.opts.cloak_character, M.opts.cloak_length)..string.rep(' ', last_line - first_line)
+      return string.rep(M.opts.cloak_character, M.opts.cloak_length)..string.rep(' ', last_col - first_col)
     else
-      return string.rep(M.opts.cloak_character, last_line - first_line)
+      return string.rep(M.opts.cloak_character, last_col - first_col)
     end
   end
 
@@ -75,7 +75,7 @@ M.cloak = function(cloak_pattern)
             hl_mode = 'combine',
             virt_text = {
               {
-                determine_pattern(first, last),
+                determine_replacement(first, last),
                 M.opts.highlight_group,
               },
             },
