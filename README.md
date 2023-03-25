@@ -12,9 +12,9 @@ It also disables 'cmp' for the buffer(if it is installed).
 
 Here is the default configuration.
 
-'file_pattern' can be a string or table of strings, they should be valid autocommand patterns.
-'cloak_pattern' is a lua pattern ran over every line in the buffer,
-overlaying 'cloak_character' over the match, excluding the first character.
+- `file_pattern` can be a string or table of strings, they should be valid autocommand patterns.
+- `cloak_pattern` is a lua pattern ran over every line in the buffer,
+overlaying `cloak_character` over the match, excluding the first character.
 
 ```lua
 require('cloak').setup({
@@ -22,6 +22,9 @@ require('cloak').setup({
   cloak_character = '*',
   -- The applied highlight group (colors) on the cloaking, see `:h highlight`.
   highlight_group = 'Comment',
+  -- Applies the length of the replacement characters for all matched
+  -- patterns, defaults to the length of the matched pattern.
+  cloak_length = nil, -- Provide a number if you want to hide the true length of the value. 
   patterns = {
     {
       -- Match any file starting with '.env'.
