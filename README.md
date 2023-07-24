@@ -15,8 +15,10 @@ Here is the default configuration.
 - `file_pattern` can be a string or table of strings, they should be valid autocommand patterns.
 - `cloak_pattern` is a lua pattern ran over every line in the buffer,
 overlaying `cloak_character` over the match, excluding the first character.
-- `replace` is a pattern with wich to replace the matched `cloak_pattern`.
-  (see [https://www.lua.org/manual/5.1/manual.html#pdf-string.gsub])
+- `replace` is a pattern with wich to replace the matched `cloak_pattern`
+  (see [https://www.lua.org/manual/5.1/manual.html#pdf-string.gsub]).
+  If the replaced text is not long enough the rest gets filled up with the cloak_character.
+  This is useful to only hide certain keys but still show the name.
 
 ```lua
 require('cloak').setup({
@@ -39,6 +41,8 @@ require('cloak').setup({
       -- example: cloak_pattern = { ':.+', '-.+' } for yaml files.
       cloak_pattern = '=.+',
       -- A function, table or string to generate the replacement.
+      -- The actual replacement will contain the 'cloak_character'
+      -- where it doesn't cover the original text.
       -- If left emtpy the legacy behavior of keeping the first character is retained.
       replace = nil,
     },
