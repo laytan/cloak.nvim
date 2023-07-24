@@ -14,6 +14,7 @@ M.opts = {
   cloak_character = '*',
   cloak_length = nil,
   highlight_group = 'Comment',
+  try_all_patterns = true,
   patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
 }
 
@@ -65,10 +66,22 @@ M.cloak = function(cloak_pattern)
   local found_pattern = false
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   for i, line in ipairs(lines) do
-    for _, pattern in ipairs(cloak_pattern) do
-      local first, last = line:find(pattern)
-
-      if first ~= nil then
+    -- Find all matches for the current line
+    local searchStartIndex = 1
+    while searchStartIndex < #line do
+      -- Find best pattern based on starting position and tiebreak with length
+      local first, last = -1, 1
+      for _, pattern in ipairs(cloak_pattern) do
+        local current_first, current_last = line:find(pattern, searchStartIndex)
+        if current_first ~= nil
+          and (first < 0
+            or current_first < first
+            or (current_first == first and current_last > last)) then
+          first, last = current_first, current_last
+          if M.opts.try_all_patterns == false then break end
+        end
+      end
+      if first >= 0 then
         found_pattern = true
         vim.api.nvim_buf_set_extmark(
           0, namespace, i - 1, first, {
@@ -82,7 +95,8 @@ M.cloak = function(cloak_pattern)
             virt_text_pos = 'overlay',
           }
         )
-      end
+      else break end
+      searchStartIndex = last
     end
   end
   if found_pattern then

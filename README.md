@@ -24,7 +24,9 @@ require('cloak').setup({
   highlight_group = 'Comment',
   -- Applies the length of the replacement characters for all matched
   -- patterns, defaults to the length of the matched pattern.
-  cloak_length = nil, -- Provide a number if you want to hide the true length of the value. 
+  cloak_length = nil, -- Provide a number if you want to hide the true length of the value.
+  -- Wether it should try every pattern to find the best fit or stop after the first.
+  try_all_patterns = true,
   patterns = {
     {
       -- Match any file starting with '.env'.
