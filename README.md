@@ -15,6 +15,8 @@ Here is the default configuration.
 - `file_pattern` can be a string or table of strings, they should be valid autocommand patterns.
 - `cloak_pattern` is a lua pattern ran over every line in the buffer,
 overlaying `cloak_character` over the match, excluding the first character.
+- `replace` is a pattern with wich to replace the matched `cloak_pattern`.
+  (see [https://www.lua.org/manual/5.1/manual.html#pdf-string.gsub])
 
 ```lua
 require('cloak').setup({
@@ -35,7 +37,10 @@ require('cloak').setup({
       -- Match an equals sign and any character after it.
       -- This can also be a table of patterns to cloak,
       -- example: cloak_pattern = { ':.+', '-.+' } for yaml files.
-      cloak_pattern = '=.+'
+      cloak_pattern = '=.+',
+      -- A function, table or string to generate the replacement.
+      -- If left emtpy the legacy behavior of keeping the first character is retained.
+      replace = nil,
     },
   },
 })
@@ -45,6 +50,6 @@ require('cloak').setup({
 
 The plugin automatically activates when a file matched by the patterns is opened.
 
-You do have to call the 'setup()' function.
+You do have to call the `setup()` function.
 
-':CloakDisable', ':CloakEnable' and ':CloakToggle' are also available to toggle cloaking.
+`:CloakDisable`, `:CloakEnable` and `:CloakToggle` are also available to change cloaking state.

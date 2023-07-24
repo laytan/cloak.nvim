@@ -27,7 +27,7 @@ M.setup = function(opts)
         pattern = pattern.file_pattern,
         callback = function()
           if M.opts.enabled then
-            M.cloak(pattern.cloak_pattern)
+            M.cloak(pattern)
           end
         end,
         group = group,
@@ -44,23 +44,31 @@ M.uncloak = function()
   vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
 end
 
-M.cloak = function(cloak_pattern)
+M.cloak = function(pattern)
   M.uncloak()
 
-  if type(cloak_pattern) == 'string' then
-    cloak_pattern = { cloak_pattern }
-  end
+  local cloak_pattern =
+    type(pattern.cloak_pattern) == 'string'
+    and { pattern.cloak_pattern }
+    or pattern.cloak_pattern
 
   if has_cmp() then
     require('cmp').setup.buffer({ enabled = false })
   end
 
-  local function determine_replacement(first_col, last_col)
-    if tonumber(M.opts.cloak_length) ~= nil then
-      return string.rep(M.opts.cloak_character, M.opts.cloak_length)..string.rep(' ', last_col - first_col)
-    else
-      return string.rep(M.opts.cloak_character, last_col - first_col)
-    end
+  local function determine_replacement(length, prefix)
+    local cloak_str = prefix
+      .. M.opts.cloak_character:rep(
+        tonumber(M.opts.cloak_length)
+        or length - vim.fn.strchars(prefix))
+    local remaining_length = length - vim.fn.strchars(cloak_str)
+    -- Fixme:
+    -- - When cloak_length is longer than the text underlying it,
+    --   it results in overlaying of extra text
+    -- => Possiblie solutions would could be implemented using inline virtual text
+    --    (https://github.com/neovim/neovim/pull/20130)
+    return cloak_str -- :sub(1, math.min(remaining_length - 1, -1))
+      .. (' '):rep(remaining_length)
   end
 
   local found_pattern = false
@@ -70,25 +78,31 @@ M.cloak = function(cloak_pattern)
     local searchStartIndex = 1
     while searchStartIndex < #line do
       -- Find best pattern based on starting position and tiebreak with length
-      local first, last = -1, 1
+      local first, last, matching_pattern, has_groups = -1, 1, nil, nil, false
       for _, pattern in ipairs(cloak_pattern) do
-        local current_first, current_last = line:find(pattern, searchStartIndex)
+        local current_first, current_last, capture_group =
+          line:find(pattern, searchStartIndex)
         if current_first ~= nil
           and (first < 0
             or current_first < first
             or (current_first == first and current_last > last)) then
-          first, last = current_first, current_last
+          first, last, matching_pattern, has_groups =
+            current_first, current_last, pattern, capture_group ~= nil
           if M.opts.try_all_patterns == false then break end
         end
       end
       if first >= 0 then
         found_pattern = true
+        local prefix = line:sub(first,first)
+        if has_groups and pattern.replace ~= nil then
+          prefix = line:sub(first,last):gsub(matching_pattern, pattern.replace, 1)
+        end
         vim.api.nvim_buf_set_extmark(
-          0, namespace, i - 1, first, {
+          0, namespace, i - 1, first-1, {
             hl_mode = 'combine',
             virt_text = {
               {
-                determine_replacement(first, last),
+                determine_replacement(last - first + 1, prefix),
                 M.opts.highlight_group,
               },
             },
