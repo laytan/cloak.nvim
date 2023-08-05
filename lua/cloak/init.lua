@@ -105,6 +105,10 @@ M.cloak = function(pattern)
           prefix = line:sub(first,last)
             :gsub(matching_pattern[1], matching_pattern.replace, 1)
         end
+        local last_of_prefix = first + vim.fn.strchars(prefix) - 1
+        if prefix == line:sub(first, last_of_prefix) then
+          first, prefix = last_of_prefix + 1, ''
+        end
         vim.api.nvim_buf_set_extmark(
           0, namespace, i - 1, first-1, {
             hl_mode = 'combine',
