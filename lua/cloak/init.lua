@@ -22,6 +22,16 @@ M.setup = function(opts)
   M.opts = vim.tbl_deep_extend('force', M.opts, opts or {})
 
   for _, pattern in ipairs(M.opts.patterns) do
+    if type(pattern.cloak_pattern) == 'string' then
+      pattern.cloak_pattern = { { pattern.cloak_pattern, replace = pattern.replace } }
+    else
+      for i, inner_pattern in ipairs(pattern.cloak_pattern) do
+        pattern.cloak_pattern[i] =
+          type(inner_pattern) == 'string'
+            and { inner_pattern, replace = pattern.cloak_pattern.replace or pattern.replace }
+            or inner_pattern
+      end
+    end
     vim.api.nvim_create_autocmd(
       { 'BufRead', 'TextChanged', 'TextChangedI', 'TextChangedP' }, {
         pattern = pattern.file_pattern,
@@ -46,18 +56,6 @@ end
 
 M.cloak = function(pattern)
   M.uncloak()
-
-  local cloak_pattern = pattern.cloak_pattern
-  if type(cloak_pattern) == 'string' then
-    cloak_pattern = { { cloak_pattern, replace = pattern.replace } }
-  else
-    for i, inner_pattern in ipairs(cloak_pattern) do
-      cloak_pattern[i] =
-        type(inner_pattern) == 'string'
-          and { inner_pattern, replace = cloak_pattern.replace or pattern.replace }
-          or inner_pattern
-    end
-  end
 
   if has_cmp() then
     require('cmp').setup.buffer({ enabled = false })
@@ -86,7 +84,7 @@ M.cloak = function(pattern)
     while searchStartIndex < #line do
       -- Find best pattern based on starting position and tiebreak with length
       local first, last, matching_pattern, has_groups = -1, 1, nil, false
-      for _, inner_pattern in ipairs(cloak_pattern) do
+      for _, inner_pattern in ipairs(pattern.cloak_pattern) do
         local current_first, current_last, capture_group =
           line:find(inner_pattern[1], searchStartIndex)
         if current_first ~= nil
