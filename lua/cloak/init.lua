@@ -47,10 +47,17 @@ end
 M.cloak = function(pattern)
   M.uncloak()
 
-  local cloak_pattern =
-    type(pattern.cloak_pattern) == 'string'
-    and { pattern.cloak_pattern }
-    or pattern.cloak_pattern
+  local cloak_pattern = pattern.cloak_pattern
+  if type(cloak_pattern) == 'string' then
+    cloak_pattern = { { cloak_pattern, replace = pattern.replace } }
+  else
+    for i, inner_pattern in ipairs(cloak_pattern) do
+      cloak_pattern[i] =
+        type(inner_pattern) == 'string'
+          and { inner_pattern, replace = cloak_pattern.replace or pattern.replace }
+          or inner_pattern
+    end
+  end
 
   if has_cmp() then
     require('cmp').setup.buffer({ enabled = false })
@@ -78,24 +85,25 @@ M.cloak = function(pattern)
     local searchStartIndex = 1
     while searchStartIndex < #line do
       -- Find best pattern based on starting position and tiebreak with length
-      local first, last, matching_pattern, has_groups = -1, 1, nil, nil, false
-      for _, pattern in ipairs(cloak_pattern) do
+      local first, last, matching_pattern, has_groups = -1, 1, nil, false
+      for _, inner_pattern in ipairs(cloak_pattern) do
         local current_first, current_last, capture_group =
-          line:find(pattern, searchStartIndex)
+          line:find(inner_pattern[1], searchStartIndex)
         if current_first ~= nil
           and (first < 0
             or current_first < first
             or (current_first == first and current_last > last)) then
           first, last, matching_pattern, has_groups =
-            current_first, current_last, pattern, capture_group ~= nil
+            current_first, current_last, inner_pattern, capture_group ~= nil
           if M.opts.try_all_patterns == false then break end
         end
       end
       if first >= 0 then
         found_pattern = true
         local prefix = line:sub(first,first)
-        if has_groups and pattern.replace ~= nil then
-          prefix = line:sub(first,last):gsub(matching_pattern, pattern.replace, 1)
+        if has_groups and matching_pattern.replace ~= nil then
+          prefix = line:sub(first,last)
+            :gsub(matching_pattern[1], matching_pattern.replace, 1)
         end
         vim.api.nvim_buf_set_extmark(
           0, namespace, i - 1, first-1, {

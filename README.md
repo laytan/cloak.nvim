@@ -50,6 +50,32 @@ require('cloak').setup({
 })
 ```
 
+The `cloak_pattern` can also be a table of `inner_pattern`s:
+```lua
+patterns = {
+  file_pattern = '.env*',
+  cloak_pattern = {
+    '(a=).+',
+    { '(b=).+' },
+    { '(c=).+', replace = '[inner] %1' }
+    -- The outer `replace` could also be specified here instead
+  },
+  replace = '[outer] %1',
+}
+```
+This would result in a cloaking of text like this:
+```env
+[outer] a=**
+b***********
+[inner] c=**
+```
+The original file was:
+```env
+a=1234567890
+b=1234567890
+c=1234567890
+```
+
 ## Usage
 
 The plugin automatically activates when a file matched by the patterns is opened.
