@@ -20,6 +20,7 @@ M.opts = {
 
 M.setup = function(opts)
   M.opts = vim.tbl_deep_extend('force', M.opts, opts or {})
+  vim.b.cloak_enabled = M.opts.enabled
 
   for _, pattern in ipairs(M.opts.patterns) do
     if type(pattern.cloak_pattern) == 'string' then
@@ -131,10 +132,12 @@ end
 M.disable = function()
   M.uncloak()
   M.opts.enabled = false
+  vim.b.cloak_enabled = false
 end
 
 M.enable = function()
   M.opts.enabled = true
+  vim.b.cloak_enabled = true
   vim.cmd('doautocmd TextChanged')
 end
 
