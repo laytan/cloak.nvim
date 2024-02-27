@@ -49,10 +49,48 @@ M.setup = function(opts)
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
+  vim.api.nvim_create_user_command('CloakPreviewLine', M.uncloakline, {})
 end
 
 M.uncloak = function()
   vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+end
+
+M.uncloakline = function()
+  local buf = vim.api.nvim_win_get_buf(0)
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local startr = { cursor[1] - 1, 0 }
+  local endr = { cursor[1] - 1, -1 }
+  local extmarks = vim.api.nvim_buf_get_extmarks(
+    0, namespace, startr, endr, { details = true }
+  )
+
+  for _, extmark in ipairs(extmarks) do
+    vim.api.nvim_buf_del_extmark(buf, namespace, extmark[1])
+  end
+
+  vim.api.nvim_create_autocmd(
+    { 'CursorMoved' }, {
+      buffer = buf,
+      callback = function(opts)
+        local ncursor = vim.api.nvim_win_get_cursor(0)
+        -- the cursor is still on the same line
+        if ncursor[1] == cursor[1] then
+          return nil
+        end
+
+        for _, extmark in ipairs(extmarks) do
+          local data = vim.deepcopy(extmark[4])
+          data['ns_id'] = nil
+          vim.api.nvim_buf_set_extmark(
+            opts.buf, namespace, extmark[2], extmark[3], data
+          )
+        end
+        return true
+      end,
+      group = group,
+    }
+  )
 end
 
 M.cloak = function(pattern)
