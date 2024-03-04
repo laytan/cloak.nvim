@@ -35,6 +35,71 @@ M.setup = function(opts)
     )
   end
 
+  -- Handle cloaking the Telescope preview.
+  vim.api.nvim_create_autocmd(
+    'User', {
+      pattern = 'TelescopePreviewerLoaded',
+      callback = function(args)
+        if not M.opts.enabled then
+          return
+        end
+
+        local buffer = require('telescope.state').get_existing_prompt_bufnrs()[1]
+        local picker = require('telescope.actions.state').get_current_picker(
+          buffer
+        )
+        local base_name = vim.fn.fnamemodify(args.data.bufname, ':t')
+
+        -- If our state variable is set, meaning we have just refreshed after cloaking a buffer,
+        -- set the selection to that row again.
+        if picker.__cloak_selection then
+          picker:set_selection(picker.__cloak_selection)
+          picker.__cloak_selection = nil
+          vim.schedule(
+            function()
+              picker:refresh_previewer()
+            end
+          )
+          return
+        end
+
+        local is_cloaked, _ = pcall(
+          vim.api.nvim_buf_get_var, args.buf, 'cloaked'
+        )
+
+        -- Check the buffer agains all configured patterns,
+        -- if matched, set a variable on the picker to know where we left off,
+        -- set a buffer variable to know we already cloaked it later, and refresh.
+        -- a refresh will result in the cloak being visible, and will make this
+        -- aucmd be called again right away with the first result, which we will then
+        -- set to what we have stored in the code above.
+        for _, pattern in ipairs(M.opts.patterns) do
+          -- Could be a string or a table of patterns.
+          local file_patterns = pattern.file_pattern
+          if type(file_patterns) == 'string' then
+            file_patterns = { file_patterns }
+          end
+
+          for _, file_pattern in ipairs(file_patterns) do
+            if base_name ~= nil and base_name:match(file_pattern) ~= nil then
+              M.cloak(pattern)
+              vim.api.nvim_buf_set_var(args.buf, 'cloaked', true)
+              if is_cloaked then
+                return
+              end
+
+              local row = picker:get_selection_row()
+              picker.__cloak_selection = row
+              picker:refresh()
+              return
+            end
+          end
+        end
+      end,
+      group = group,
+    }
+  )
+
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
