@@ -92,7 +92,7 @@ M.setup = function(opts)
           end
 
           for _, file_pattern in ipairs(file_patterns) do
-            if base_name ~= nil and base_name:match(file_pattern) ~= nil then
+            if base_name ~= nil and vim.fn.match(base_name, vim.fn.glob2regpat(file_pattern)) ~= -1 then
               M.cloak(pattern)
               vim.api.nvim_buf_set_var(args.buf, 'cloaked', true)
               if is_cloaked then
