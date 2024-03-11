@@ -16,7 +16,7 @@ M.opts = {
   highlight_group = 'Comment',
   try_all_patterns = true,
   patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
-  cloak_telescope = false,
+  cloak_telescope = true,
 }
 
 M.setup = function(opts)

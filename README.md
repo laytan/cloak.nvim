@@ -31,8 +31,8 @@ require('cloak').setup({
   cloak_length = nil, -- Provide a number if you want to hide the true length of the value.
   -- Whether it should try every pattern to find the best fit or stop after the first.
   try_all_patterns = true,
-  cloak_telescope = false,
   -- Set to true to cloak Telescope preview buffers.
+  cloak_telescope = true,
   patterns = {
     {
       -- Match any file starting with '.env'.
