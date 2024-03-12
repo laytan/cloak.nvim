@@ -86,6 +86,7 @@ M.uncloak_line = function()
             opts.buf, namespace, extmark[2], extmark[3], data
           )
         end
+        // deletes the auto command
         return true
       end,
       group = group,
