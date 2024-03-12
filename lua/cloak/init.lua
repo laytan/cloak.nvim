@@ -56,7 +56,7 @@ M.uncloak = function()
   vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
 end
 
-M.uncloakline = function()
+M.uncloak_line = function()
   local buf = vim.api.nvim_win_get_buf(0)
   local cursor = vim.api.nvim_win_get_cursor(0)
   local startr = { cursor[1] - 1, 0 }
