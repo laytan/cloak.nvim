@@ -49,7 +49,7 @@ M.setup = function(opts)
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
-  vim.api.nvim_create_user_command('CloakPreviewLine', M.uncloakline, {})
+  vim.api.nvim_create_user_command('CloakPreviewLine', M.uncloak_line, {})
 end
 
 M.uncloak = function()
