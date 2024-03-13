@@ -83,3 +83,6 @@ The plugin automatically activates when a file matched by the patterns is opened
 You do have to call the `setup()` function.
 
 `:CloakDisable`, `:CloakEnable` and `:CloakToggle` are also available to change cloaking state.
+
+Additionally, you can use `:CloakPreviewLine` to uncloak the line under the cursor.
+The cloak gets reapplied when you move your cursor to a different line.
