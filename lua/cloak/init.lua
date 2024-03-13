@@ -16,6 +16,7 @@ M.opts = {
   highlight_group = 'Comment',
   try_all_patterns = true,
   patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
+  uncloaked_line_num = nil
 }
 
 M.setup = function(opts)
@@ -57,6 +58,10 @@ M.uncloak = function()
 end
 
 M.uncloak_line = function()
+  if not M.opts.enabled then
+    return
+  end
+
   local buf = vim.api.nvim_win_get_buf(0)
   local cursor = vim.api.nvim_win_get_cursor(0)
   local startr = { cursor[1] - 1, 0 }
@@ -64,6 +69,11 @@ M.uncloak_line = function()
   local extmarks = vim.api.nvim_buf_get_extmarks(
     0, namespace, startr, endr, { details = true }
   )
+
+  local uncloaked_line = vim.api.nvim_buf_get_lines(
+    buf, cursor[1] - 1, cursor[1], false
+  )[1]
+  M.opts.uncloaked_line_num = cursor[1]
 
   for _, extmark in ipairs(extmarks) do
     vim.api.nvim_buf_del_extmark(buf, namespace, extmark[1])
@@ -74,6 +84,7 @@ M.uncloak_line = function()
       buffer = buf,
       callback = function(opts)
         local ncursor = vim.api.nvim_win_get_cursor(0)
+
         -- the cursor is still on the same line
         if ncursor[1] == cursor[1] then
           return nil
@@ -81,12 +92,29 @@ M.uncloak_line = function()
 
         for _, extmark in ipairs(extmarks) do
           local data = vim.deepcopy(extmark[4])
+          local uncloaked_line_new = vim.api.nvim_buf_get_lines(
+            buf, cursor[1] - 1, cursor[1], false
+          )[1]
+
+          -- add more padding if needed
+          if #uncloaked_line_new > #uncloaked_line then
+            local virt_text = data.virt_text[1]
+
+            virt_text = {
+              virt_text[1] .. (' '):rep(#uncloaked_line_new - #uncloaked_line),
+              virt_text[2],
+            }
+            data.virt_text = { virt_text }
+          end
+
           data['ns_id'] = nil
+
           vim.api.nvim_buf_set_extmark(
             opts.buf, namespace, extmark[2], extmark[3], data
           )
         end
-        // deletes the auto command
+
+        -- deletes the auto command
         return true
       end,
       group = group,
@@ -121,7 +149,10 @@ M.cloak = function(pattern)
   for i, line in ipairs(lines) do
     -- Find all matches for the current line
     local searchStartIndex = 1
-    while searchStartIndex < #line do
+    while searchStartIndex < #line and
+        -- if the line is uncloaked skip
+      i ~= M.opts.uncloaked_line_num do
+
       -- Find best pattern based on starting position and tiebreak with length
       local first, last, matching_pattern, has_groups = -1, 1, nil, false
       for _, inner_pattern in ipairs(pattern.cloak_pattern) do
