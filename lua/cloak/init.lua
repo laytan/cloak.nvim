@@ -53,7 +53,8 @@ M.setup = function(opts)
       'User', {
         pattern = 'TelescopePreviewerLoaded',
         callback = function(args)
-          if not M.opts.enabled then
+          -- Feature not in 0.1.x
+          if not M.opts.enabled or args.data == nil then
             return
           end
 
