@@ -17,7 +17,7 @@ M.opts = {
   try_all_patterns = true,
   patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
   cloak_telescope = true,
-  uncloaked_line_num = nil
+  uncloaked_line_num = nil,
 }
 
 M.setup = function(opts)
@@ -62,7 +62,6 @@ M.setup = function(opts)
           local picker = require('telescope.actions.state').get_current_picker(
             buffer
           )
-          local base_name = vim.fn.fnamemodify(args.data.bufname, ':t')
 
           -- If our state variable is set, meaning we have just refreshed after cloaking a buffer,
           -- set the selection to that row again.
@@ -87,27 +86,16 @@ M.setup = function(opts)
           -- a refresh will result in the cloak being visible, and will make this
           -- aucmd be called again right away with the first result, which we will then
           -- set to what we have stored in the code above.
-          for _, pattern in ipairs(M.opts.patterns) do
-            -- Could be a string or a table of patterns.
-            local file_patterns = pattern.file_pattern
-            if type(file_patterns) == 'string' then
-              file_patterns = { file_patterns }
+          if M.recloak_file(args.data.bufname) then
+            vim.api.nvim_buf_set_var(args.buf, 'cloaked', true)
+            if is_cloaked then
+              return
             end
 
-            for _, file_pattern in ipairs(file_patterns) do
-              if base_name ~= nil and vim.fn.match(base_name, vim.fn.glob2regpat(file_pattern)) ~= -1 then
-                M.cloak(pattern)
-                vim.api.nvim_buf_set_var(args.buf, 'cloaked', true)
-                if is_cloaked then
-                  return
-                end
-
-                local row = picker:get_selection_row()
-                picker.__cloak_selection = row
-                picker:refresh()
-                return
-              end
-            end
+            local row = picker:get_selection_row()
+            picker.__cloak_selection = row
+            picker:refresh()
+            return
           end
         end,
         group = group,
@@ -133,55 +121,25 @@ M.uncloak_line = function()
 
   local buf = vim.api.nvim_win_get_buf(0)
   local cursor = vim.api.nvim_win_get_cursor(0)
-  local startr = { cursor[1] - 1, 0 }
-  local endr = { cursor[1] - 1, -1 }
-  local extmarks = vim.api.nvim_buf_get_extmarks(
-    0, namespace, startr, endr, { details = true }
-  )
-
-  local uncloaked_line = vim.api.nvim_buf_get_lines(
-    buf, cursor[1] - 1, cursor[1], false
-  )[1]
   M.opts.uncloaked_line_num = cursor[1]
 
-  for _, extmark in ipairs(extmarks) do
-    vim.api.nvim_buf_del_extmark(buf, namespace, extmark[1])
-  end
-
   vim.api.nvim_create_autocmd(
-    { 'CursorMoved' }, {
+    { 'CursorMoved', 'CursorMovedI' }, {
       buffer = buf,
-      callback = function(opts)
+      callback = function()
+        local nbuf = vim.api.nvim_win_get_buf(0)
         local ncursor = vim.api.nvim_win_get_cursor(0)
 
-        -- the cursor is still on the same line
-        if ncursor[1] == cursor[1] then
-          return nil
+        if buf ~= nbuf then
+          return
         end
 
-        for _, extmark in ipairs(extmarks) do
-          local data = vim.deepcopy(extmark[4])
-          local uncloaked_line_new = vim.api.nvim_buf_get_lines(
-            buf, cursor[1] - 1, cursor[1], false
-          )[1]
-
-          -- add more padding if needed
-          if #uncloaked_line_new > #uncloaked_line then
-            local virt_text = data.virt_text[1]
-
-            virt_text = {
-              virt_text[1] .. (' '):rep(#uncloaked_line_new - #uncloaked_line),
-              virt_text[2],
-            }
-            data.virt_text = { virt_text }
-          end
-
-          data['ns_id'] = nil
-
-          vim.api.nvim_buf_set_extmark(
-            opts.buf, namespace, extmark[2], extmark[3], data
-          )
+        if ncursor[1] == M.opts.uncloaked_line_num then
+          return
         end
+
+        M.opts.uncloaked_line_num = nil
+        M.recloak_file(vim.api.nvim_buf_get_name(nbuf))
 
         -- deletes the auto command
         return true
@@ -189,6 +147,8 @@ M.uncloak_line = function()
       group = group,
     }
   )
+
+  M.recloak_file(vim.api.nvim_buf_get_name(buf))
 end
 
 M.cloak = function(pattern)
@@ -266,6 +226,27 @@ M.cloak = function(pattern)
   if found_pattern then
     vim.opt_local.wrap = false
   end
+end
+
+M.recloak_file = function(filename)
+  local base_name = vim.fn.fnamemodify(filename, ':t')
+  for _, pattern in ipairs(M.opts.patterns) do
+    -- Could be a string or a table of patterns.
+    local file_patterns = pattern.file_pattern
+    if type(file_patterns) == 'string' then
+      file_patterns = { file_patterns }
+    end
+
+    for _, file_pattern in ipairs(file_patterns) do
+      if base_name ~= nil and
+        vim.fn.match(base_name, vim.fn.glob2regpat(file_pattern)) ~= -1 then
+        M.cloak(pattern)
+        return true
+      end
+    end
+  end
+
+  return false
 end
 
 M.disable = function()
