@@ -17,6 +17,7 @@ M.opts = {
   try_all_patterns = true,
   patterns = { { file_pattern = '.env*', cloak_pattern = '=.+' } },
   cloak_telescope = true,
+  uncloaked_line_num = nil,
 }
 
 M.setup = function(opts)
@@ -62,7 +63,6 @@ M.setup = function(opts)
           local picker = require('telescope.actions.state').get_current_picker(
             buffer
           )
-          local base_name = vim.fn.fnamemodify(args.data.bufname, ':t')
 
           -- If our state variable is set, meaning we have just refreshed after cloaking a buffer,
           -- set the selection to that row again.
@@ -87,27 +87,16 @@ M.setup = function(opts)
           -- a refresh will result in the cloak being visible, and will make this
           -- aucmd be called again right away with the first result, which we will then
           -- set to what we have stored in the code above.
-          for _, pattern in ipairs(M.opts.patterns) do
-            -- Could be a string or a table of patterns.
-            local file_patterns = pattern.file_pattern
-            if type(file_patterns) == 'string' then
-              file_patterns = { file_patterns }
+          if M.recloak_file(args.data.bufname) then
+            vim.api.nvim_buf_set_var(args.buf, 'cloaked', true)
+            if is_cloaked then
+              return
             end
 
-            for _, file_pattern in ipairs(file_patterns) do
-              if base_name ~= nil and vim.fn.match(base_name, vim.fn.glob2regpat(file_pattern)) ~= -1 then
-                M.cloak(pattern)
-                vim.api.nvim_buf_set_var(args.buf, 'cloaked', true)
-                if is_cloaked then
-                  return
-                end
-  
-                local row = picker:get_selection_row()
-                picker.__cloak_selection = row
-                picker:refresh()
-                return
-              end
-            end
+            local row = picker:get_selection_row()
+            picker.__cloak_selection = row
+            picker:refresh()
+            return
           end
         end,
         group = group,
@@ -119,10 +108,48 @@ M.setup = function(opts)
   vim.api.nvim_create_user_command('CloakEnable', M.enable, {})
   vim.api.nvim_create_user_command('CloakDisable', M.disable, {})
   vim.api.nvim_create_user_command('CloakToggle', M.toggle, {})
+  vim.api.nvim_create_user_command('CloakPreviewLine', M.uncloak_line, {})
 end
 
 M.uncloak = function()
   vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+end
+
+M.uncloak_line = function()
+  if not M.opts.enabled then
+    return
+  end
+
+  local buf = vim.api.nvim_win_get_buf(0)
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  M.opts.uncloaked_line_num = cursor[1]
+
+  vim.api.nvim_create_autocmd(
+    { 'CursorMoved', 'CursorMovedI' }, {
+      buffer = buf,
+      callback = function()
+        local nbuf = vim.api.nvim_win_get_buf(0)
+        local ncursor = vim.api.nvim_win_get_cursor(0)
+
+        if buf ~= nbuf then
+          return
+        end
+
+        if ncursor[1] == M.opts.uncloaked_line_num then
+          return
+        end
+
+        M.opts.uncloaked_line_num = nil
+        M.recloak_file(vim.api.nvim_buf_get_name(nbuf))
+
+        -- deletes the auto command
+        return true
+      end,
+      group = group,
+    }
+  )
+
+  M.recloak_file(vim.api.nvim_buf_get_name(buf))
 end
 
 M.cloak = function(pattern)
@@ -152,7 +179,10 @@ M.cloak = function(pattern)
   for i, line in ipairs(lines) do
     -- Find all matches for the current line
     local searchStartIndex = 1
-    while searchStartIndex < #line do
+    while searchStartIndex < #line and
+        -- if the line is uncloaked skip
+      i ~= M.opts.uncloaked_line_num do
+
       -- Find best pattern based on starting position and tiebreak with length
       local first, last, matching_pattern, has_groups = -1, 1, nil, false
       for _, inner_pattern in ipairs(pattern.cloak_pattern) do
@@ -197,6 +227,27 @@ M.cloak = function(pattern)
   if found_pattern then
     vim.opt_local.wrap = false
   end
+end
+
+M.recloak_file = function(filename)
+  local base_name = vim.fn.fnamemodify(filename, ':t')
+  for _, pattern in ipairs(M.opts.patterns) do
+    -- Could be a string or a table of patterns.
+    local file_patterns = pattern.file_pattern
+    if type(file_patterns) == 'string' then
+      file_patterns = { file_patterns }
+    end
+
+    for _, file_pattern in ipairs(file_patterns) do
+      if base_name ~= nil and
+        vim.fn.match(base_name, vim.fn.glob2regpat(file_pattern)) ~= -1 then
+        M.cloak(pattern)
+        return true
+      end
+    end
+  end
+
+  return false
 end
 
 M.disable = function()
